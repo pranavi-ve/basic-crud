@@ -4,8 +4,9 @@ const userService = require('./user.service');
 
 // routes
 router.post('/authenticate', authenticate);
+router.put('/authenticate', logout);
 router.post('/register', register);
-router.get('/', getAll);
+// router.get('/', getAll);
 router.get('/current', getCurrent);
 router.get('/:id', getById);
 router.put('/:id', update);
@@ -14,7 +15,8 @@ router.delete('/:id', _delete);
 module.exports = router;
 
 function authenticate(req, res, next) {
-    userService.authenticate(req.body)
+    const ip=frameIpDetails(req);
+    userService.authenticate({...req.body,ip})
         .then(user => user ? res.json(user) : res.status(400).json({ message: 'Username or password is incorrect' }))
         .catch(err => next(err));
 }
@@ -25,11 +27,11 @@ function register(req, res, next) {
         .catch(err => next(err));
 }
 
-function getAll(req, res, next) {
-    userService.getAll()
-        .then(users => res.json(users))
-        .catch(err => next(err));
-}
+// function getAll(req, res, next) {
+//     userService.getAll()
+//         .then(users => res.json(users))
+//         .catch(err => next(err));
+// }
 
 function getCurrent(req, res, next) {
     userService.getById(req.user.sub)
@@ -51,6 +53,19 @@ function update(req, res, next) {
 
 function _delete(req, res, next) {
     userService.delete(req.params.id)
+        .then(() => res.json({}))
+        .catch(err => next(err));
+}
+function frameIpDetails(req){
+    var ip = req.headers['x-forwarded-for'] || 
+    req.connection.remoteAddress || 
+    req.socket.remoteAddress ||
+    req.connection.socket.remoteAddress;
+    return ip;
+}
+
+function logout(req, res, next) {
+    userService.logout(req.query)
         .then(() => res.json({}))
         .catch(err => next(err));
 }
